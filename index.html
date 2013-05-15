@@ -68,7 +68,13 @@ Revised May 8, 2013
 
 (function($){
 
+var options = {};
+options.lightbox_open = false;
+
 function open_lightbox(post) {
+    options.lightbox_open = true;
+    clearTimeout(options.lightbox_timeout);
+
     // Prepare the post
     var $post = $(post).clone().removeClass('clickable');
 
@@ -127,8 +133,11 @@ function open_lightbox(post) {
 }
 
 function close_lightbox() {
+    options.lightbox_open = false;
+    clearTimeout(options.lightbox_timeout);
+
     $('#lightbox').addClass('animate-out').removeClass('animate-in');
-    setTimeout(function() {
+    options.lightbox_timeout = setTimeout(function() {
         $('#lightbox').removeClass('visible');
         $('#lightbox .post').remove();
     }, 500);
@@ -264,6 +273,21 @@ $(function(){
     // Show video thumbnails
     $('.post-grid .post.video').each(function(i, o) {
         video_placeholders(o);
+    });
+
+    // Key events
+    $(window).on('keydown', function(e) {
+        switch (e.which) {
+            // ESC
+            case 27:
+                if (options.lightbox_open) {
+                    close_lightbox();
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                break;
+            default: break;
+        }
     });
 
     // Add click overlays for certain media types
@@ -1496,6 +1520,9 @@ p.question {
 
     .single-post .post {
         margin: 0 -20px;
+    }
+    .single-post .post.photo .image {
+        margin: 0 -10px;
     }
 
     .footer-content.page-width {
