@@ -31,6 +31,7 @@ Revised May 8, 2013
         <meta name="if:Header Background Image" content="0"/>
         <meta name="if:Show Header Navigation" content="1"/>
         <meta name="if:Header Left Navigation" content="0"/>
+        <meta name="if:Buttons Light" content="0"/>
         <meta name="color:Header Background" content="#ffffff"/>
         <meta name="color:Header Text" content="#ee6644"/>
         <meta name="color:Header Link Text" content="#888888"/>
@@ -102,6 +103,7 @@ function open_lightbox(post) {
     }
 
     // Add post and show the lightbox
+    replace_templates($post);
     $('#lightbox .single-post').prepend($post);
     $('#lightbox').addClass('visible');
     $('body').addClass('no-scroll');
@@ -187,6 +189,13 @@ function last_word(el, class_name, tag_name) {
         'text': last_word
     });
     $last.text(text.replace(/(.*\s)?(\S+)/, '$1')).append($last_word);
+}
+
+function replace_templates(container) {
+    $(container).find('.template-replace').each(function(i, o) {
+        var $content = $(o).html();
+        $(o).after($content).remove();
+    });
 }
 
 // On load...
@@ -359,6 +368,13 @@ a {
     color: {color:Header Link Active};
 }
 
+a {
+    -webkit-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+       -moz-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+        -ms-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+         -o-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+            transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+}
 a:hover {
     color: {color:Link Hover};
 }
@@ -620,6 +636,11 @@ body {
     -webkit-transform: rotate(45deg);
         -ms-transform: rotate(45deg);
             transform: rotate(45deg);
+    -webkit-transition: border-color 0.2s ease-in-out;
+       -moz-transition: border-color 0.2s ease-in-out;
+        -ms-transition: border-color 0.2s ease-in-out;
+         -o-transition: border-color 0.2s ease-in-out;
+            transition: border-color 0.2s ease-in-out;
 }
 #lightbox .close:after {
     -webkit-transform: rotate(-45deg);
@@ -864,6 +885,11 @@ body {
     display: block;
     border-top: 4px solid {color:Post Accent};
     padding-top: 16px;
+    -webkit-transition: border-color 0.2s ease-in-out;
+       -moz-transition: border-color 0.2s ease-in-out;
+        -ms-transition: border-color 0.2s ease-in-out;
+         -o-transition: border-color 0.2s ease-in-out;
+            transition: border-color 0.2s ease-in-out;
 }
 
 .single-post .post.answer:before,
@@ -1163,6 +1189,41 @@ p.question {
     float: left;
     margin-right: 15px;
 }
+.reblog-like-container {
+    display: block;
+    float: right;
+}
+.reblog-like-container .button {
+    width: 20px;
+    height: 20px;
+    padding: 4px;
+    float: left;
+    margin-left: 10px;
+}
+.reblog-like-container .button .reblog_button,
+.reblog-like-container .button .like_button {
+    opacity: 0.27;
+    filter: alpha(opacity=27);
+    -webkit-transition: opacity 0.2s ease-in-out;
+       -moz-transition: opacity 0.2s ease-in-out;
+        -ms-transition: opacity 0.2s ease-in-out;
+         -o-transition: opacity 0.2s ease-in-out;
+            transition: opacity 0.2s ease-in-out;
+}
+.reblog-like-container .button:hover .reblog_button,
+.reblog-like-container .button:hover .like_button {
+    opacity: 0.54;
+    filter: alpha(opacity=54);
+}
+.reblog-like-container .button .like_button.liked {
+    opacity: 0.85;
+    filter: alpha(opacity=85);
+}
+.reblog-like-container .button:hover .like_button.liked {
+    opacity: 1;
+    filter: alpha(opacity=100);
+}
+
 .metadata:after {
     content: '';
     display: block;
@@ -1569,6 +1630,18 @@ p.question {
                                             <a href="{Permalink}">{NoteCountWithLabel}</a>
                                         </div>
                                     {/block:NoteCount}{/block:IfShowPostNotes}
+                                    <div class="reblog-like-container">
+                                        <script class="template-replace like_button" data-post-id="{PostID}" type="text/template">
+                                            {block:IfButtonsLight}
+                                                <div class="button">{ReblogButton color="white" size="20"}</div>
+                                                <div class="button">{LikeButton color="white" size="20"}</div>
+                                            {/block:IfButtonsLight}
+                                            {block:IfNotButtonsLight}
+                                                <div class="button">{ReblogButton color="black" size="20"}</div>
+                                                <div class="button">{LikeButton color="black" size="20"}</div>
+                                            {/block:IfNotButtonsLight}
+                                        </script>
+                                    </div>
                                 </div>
 
                             </div>
