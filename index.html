@@ -69,14 +69,26 @@ Revised May 8, 2013
 (function($){
 
 var options = {};
+options.home = document.location.href;
 options.lightbox_open = false;
+options.$current_post = false;
+options.state = [];
 
-function open_lightbox(post) {
+function open_lightbox(post, no_pushstate) {
+    var $current_post = $(post);
+    if (!$current_post.length) return false;
+
     options.lightbox_open = true;
     clearTimeout(options.lightbox_timeout);
 
     // Prepare the post
-    var $post = $(post).clone().removeClass('clickable');
+    options.$current_post = $current_post;
+    var $post = $current_post.clone().removeClass('clickable');
+
+    if (!no_pushstate) {
+        options.state.push(options.home);
+        history.pushState(options.state, '', $post.data('permalink'));
+    }
 
     // Replace templates
     replace_templates($post);
@@ -113,6 +125,9 @@ function open_lightbox(post) {
         });
     }
 
+    // Remove old posts
+    $('#lightbox .post').remove();
+
     // Add post and show the lightbox
     $('#lightbox .single-post').prepend($post);
     $('#lightbox').addClass('visible');
@@ -132,9 +147,15 @@ function open_lightbox(post) {
     $('#lightbox').addClass('animate-in').removeClass('animate-out');
 }
 
-function close_lightbox() {
+function close_lightbox(no_pushstate) {
     options.lightbox_open = false;
+    options.$current_post = false;
     clearTimeout(options.lightbox_timeout);
+
+    if (!no_pushstate) {
+        options.state.push(options.home);
+        history.pushState(options.state, '', options.home);
+    }
 
     $('#lightbox').addClass('animate-out').removeClass('animate-in');
     options.lightbox_timeout = setTimeout(function() {
@@ -276,17 +297,56 @@ $(function(){
     });
 
     // Key events
-    $(window).on('keydown', function(e) {
-        switch (e.which) {
-            // ESC
-            case 27:
+    $(window).on({
+        popstate: function(e) {
+            if (!options.state.length && options.home === document.location.href) {
+                return;
+            }
+
+            var navigated = false;
+            if (options.home === document.location.href) {
                 if (options.lightbox_open) {
-                    close_lightbox();
-                    e.preventDefault();
-                    e.stopPropagation();
+                    close_lightbox(true);
+                    navigated = true;
                 }
-                break;
-            default: break;
+            }
+            var path_components = document.location.href.replace(/([^\/]+:\/\/)?(.*)/i, '$2').split('/');
+            if (path_components.length > 2 && path_components[1].toLowerCase() === 'post') {
+                var $post = $('#post-' + path_components[2]);
+                if ($post.length) {
+                    open_lightbox($post, true);
+                    navigated = true;
+                }
+            }
+
+            if (!navigated) {
+                document.location.reload();
+            }
+        },
+        keydown: function(e) {
+            switch (e.which) {
+                // ESC
+                case 27:
+                    if (options.lightbox_open) {
+                        close_lightbox();
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                    break;
+                // Left
+                case 37:
+                    if ((e.metaKey === false && e.ctrlKey === false) && options.$current_post) {
+                        open_lightbox(options.$current_post.prev());
+                    }
+                    break;
+                // Right
+                case 39:
+                    if ((e.metaKey === false && e.ctrlKey === false) && options.$current_post) {
+                        open_lightbox(options.$current_post.next());
+                    }
+                    break;
+                default: break;
+            }
         }
     });
 
@@ -653,7 +713,7 @@ body {
 }
 
 #lightbox .close {
-    position: absolute;
+    position: fixed;
     top: 0;
     right: 0;
 
@@ -670,6 +730,7 @@ body {
     text-indent: -9999px;
     font-size: 0;
 }
+
 #lightbox .close:before,
 #lightbox .close:after {
     content: '';
@@ -1407,10 +1468,10 @@ p.question {
            animation: lightbox-in 0.2s ease-out 0.2s 1 both;
 }
 #lightbox.animate-out {
-   -webkit-animation: lightbox-out 0.1s ease 1 both;
-      -moz-animation: lightbox-out 0.1s ease 1 both;
-        -o-animation: lightbox-out 0.1s ease 1 both;
-           animation: lightbox-out 0.1s ease 1 both;
+   -webkit-animation: lightbox-out 0.1s ease-in 1 both;
+      -moz-animation: lightbox-out 0.1s ease-in 1 both;
+        -o-animation: lightbox-out 0.1s ease-in 1 both;
+           animation: lightbox-out 0.1s ease-in 1 both;
 }
 
 @-webkit-keyframes post-click {
@@ -1676,7 +1737,7 @@ p.question {
                     <div class="post-grid page-width">
                         {block:Posts}
 
-                            <div class="post {PostType} post-id-{PostID}" id="post-{PostID}">
+                            <div class="post {PostType} post-id-{PostID}" id="post-{PostID}" data-post-id="{PostID}" data-permalink="{Permalink}">
 
                                 {block:Text}
                                     {block:Title}
