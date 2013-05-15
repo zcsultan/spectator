@@ -71,6 +71,11 @@ Revised May 8, 2013
 function open_lightbox(post) {
     // Prepare the post
     var $post = $(post).clone().removeClass('clickable');
+
+    // Replace templates
+    replace_templates($post);
+
+    // Type-specific replacements
     if ($post.is('.photo')) {
         $post.find('.image img').each(function(i, o) {
             var $img = $(this);
@@ -103,7 +108,6 @@ function open_lightbox(post) {
     }
 
     // Add post and show the lightbox
-    replace_templates($post);
     $('#lightbox .single-post').prepend($post);
     $('#lightbox').addClass('visible');
     $('body').addClass('no-scroll');
@@ -191,11 +195,24 @@ function last_word(el, class_name, tag_name) {
     $last.text(text.replace(/(.*\s)?(\S+)/, '$1')).append($last_word);
 }
 
-function replace_templates(container) {
-    $(container).find('.template-replace').each(function(i, o) {
-        var $content = $(o).html();
-        $(o).after($content).remove();
+function replace_templates(container, selector, callback) {
+    if (!selector) selector = '.template-replace';
+    $(container).find(selector).each(function(i, o) {
+        var content = $(o).html();
+        if (typeof callback === 'function') {
+            content = callback.apply(this, [content]);
+        }
+        $(o).after(content).remove();
     });
+    $(container).find('.template-remove').remove();
+}
+
+function video_placeholders(container) {
+    var $container = $(container);
+    var $thumbnail_container = $container.find('.video-thumbnail');
+    var $video_template = $container.find('.template-replace');
+    // If all else fails, just fill in the existing video info
+    $thumbnail_container.html($video_template.html());
 }
 
 // On load...
@@ -242,6 +259,11 @@ $(function(){
     // Add link arrow to last word
     $('.post-grid .post.link .title a').each(function(i, o) {
         last_word(o, 'link-arrow', 'span');
+    });
+
+    // Show video thumbnails
+    $('.post-grid .post.video').each(function(i, o) {
+        video_placeholders(o);
     });
 
     // Add click overlays for certain media types
@@ -482,6 +504,81 @@ body {
     padding: 10px 30px;
 }
 
+.footer-content.page-width {
+    width: 900px;
+    padding: 35px 30px 0;
+}
+
+@media (max-width: 961px) {
+    .page-min-width {
+        min-width: 640px;
+    }
+
+    .page-width {
+        position: relative;
+        margin: 0 auto;
+        width: 640px;
+    }
+
+    .header-content.page-width {
+        width: 620px;
+        padding: 0 10px;
+    }
+    .background-image .header-content.page-width {
+        width: 600px;
+        padding: 0 20px;
+    }
+    .post-grid.page-width {
+        width: 620px;
+        padding: 35px 10px;
+    }
+
+    .single-post.page-width {
+        width: 600px;
+        padding: 10px 20px;
+    }
+
+    .footer-content.page-width {
+        width: 600px;
+        padding: 35px 20px 0;
+    }
+}
+
+@media (max-width: 641px) {
+    .page-min-width {
+        min-width: 320px;
+    }
+
+    .page-width {
+        position: relative;
+        margin: 0 auto;
+        width: 320px;
+    }
+
+    .header-content.page-width {
+        width: 310px;
+        padding: 0 5px;
+    }
+    .background-image .header-content.page-width {
+        width: 300px;
+        padding: 0 10px;
+    }
+    .post-grid.page-width {
+        width: 310px;
+        padding: 35px 5px;
+    }
+
+    .single-post.page-width {
+        width: 300px;
+        padding: 10px 10px;
+    }
+
+    .footer-content.page-width {
+        width: 300px;
+        padding: 35px 10px 0;
+    }
+}
+
 #header {
 
 }
@@ -498,10 +595,6 @@ body {
     content: '';
     display: block;
     clear: both;
-}
-.footer-content.page-width {
-    width: 900px;
-    padding: 35px 30px 0;
 }
 
 
@@ -1572,7 +1665,10 @@ p.question {
 
                                 {block:Video}
                                     <div class="media-embed">
-                                        {VideoEmbed-700}
+                                        <script class="template-replace" type="text/template">
+                                            {VideoEmbed-700}
+                                        </script>
+                                        <div class="video-thumbnail template-remove"></div>
                                     </div>
                                     {block:Caption}
                                         <div class="caption">
@@ -1588,9 +1684,11 @@ p.question {
                                                 <img src="{AlbumArtURL}" alt=""/>
                                             {/block:AlbumArt}
                                         </div>
-                                        <div class="audio-embed">
-                                            {AudioPlayer}
-                                        </div>
+                                        <script class="template-replace" type="text/template">
+                                            <div class="audio-embed">
+                                                {AudioPlayer}
+                                            </div>
+                                        </script>
                                     {/block:AudioPlayer}
                                     {block:AudioEmbed}
                                         <div class="media-embed">
