@@ -44,7 +44,6 @@ Revised May 8, 2013
         <meta name="color:Link Hover" content="#444444"/>
         <meta name="color:Link Active" content="#000000"/>
         <meta name="color:Link Underline" content="#c9c9c9"/>
-        <meta name="color:Post Background" content="#eeeeee"/>
         <meta name="color:Post Accent" content="#c9c9c9"/>
         <meta name="image:Header" content=""/>
         <meta name="text:TypeKit ID" content=""/>
@@ -69,6 +68,7 @@ Revised May 8, 2013
 (function($){
 
 var options = {};
+options.page_type = 'loading';
 options.home = document.location.href;
 options.lightbox_open = false;
 options.$current_post = false;
@@ -142,9 +142,6 @@ function open_lightbox(post, no_pushstate) {
             }, 200);
         });
     }
-
-    // Start the lightbox animation
-    $('#lightbox').addClass('animate-in').removeClass('animate-out');
 }
 
 function close_lightbox(no_pushstate) {
@@ -157,9 +154,8 @@ function close_lightbox(no_pushstate) {
         history.pushState(options.state, '', options.home);
     }
 
-    $('#lightbox').addClass('animate-out').removeClass('animate-in');
+    $('#lightbox').removeClass('visible');
     options.lightbox_timeout = setTimeout(function() {
-        $('#lightbox').removeClass('visible');
         $('#lightbox .post').remove();
     }, 500);
     $('body').removeClass('no-scroll');
@@ -195,7 +191,7 @@ function center_image(img) {
             'width': size * width / height,
             'height': size,
             'margin-top': '',
-            'margin-left': size * (1 - width / height)
+            'margin-left': 0.5 * size * (1 - width / height)
         });
     }
     // Portrait
@@ -203,7 +199,7 @@ function center_image(img) {
         $img.css({
             'width': size,
             'height': size * height / width,
-            'margin-top': size * (1 - height / width),
+            'margin-top': 0.5 * size * (1 - height / width),
             'margin-left': ''
         });
     }
@@ -247,6 +243,8 @@ function video_placeholders(container) {
 
 // On load...
 $(function(){
+    options.page_type = $('#page').data('page-type');
+
     // Make posts clickable
     $('.post-grid .post').addClass('clickable').on('click', function(e) {
         var $post = $(this);
@@ -267,19 +265,21 @@ $(function(){
     });
 
     // Lightbox close
-    $('#lightbox .close').on('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        close_lightbox();
-        return false;
-    });
-    $('#lightbox').on('click', function (e) {
-        if ($(e.target).is('#lightbox .post, #lightbox .post *')) {
-            return true;
-        }
-        $('#lightbox .close').trigger('click');
-        return false;
-    });
+    if (options.page_type === 'index') {
+        $('#lightbox .close').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            close_lightbox();
+            return false;
+        });
+        $('#lightbox').on('click', function (e) {
+            if ($(e.target).is('#lightbox .post, #lightbox .post *')) {
+                return true;
+            }
+            $('#lightbox .close').trigger('click');
+            return false;
+        });
+    }
 
     // Center images in squares
     $('.post-grid .post.photo .image img').each(function(i, o) {
@@ -296,10 +296,16 @@ $(function(){
         video_placeholders(o);
     });
 
-    // Key events
+    // Window events
     $(window).on({
+
+        // Pop State
         popstate: function(e) {
             if (!options.state.length && options.home === document.location.href) {
+                return;
+            }
+            if (options.page_type === 'permalink') {
+                document.location.reload();
                 return;
             }
 
@@ -323,6 +329,8 @@ $(function(){
                 document.location.reload();
             }
         },
+
+        // Keyboard shortcuts
         keydown: function(e) {
             switch (e.which) {
                 // ESC
@@ -348,6 +356,7 @@ $(function(){
                 default: break;
             }
         }
+
     });
 
     // Add click overlays for certain media types
@@ -441,9 +450,9 @@ a {
     text-decoration: none;
 }
 
-#lightbox {
+.lightbox {
     color: {color:Body Text};
-    background-color: {color:Header Background};
+    background-color: {color:Content Background};
 }
 
 #header {
@@ -515,8 +524,7 @@ body {
     font-weight: normal;
 }
 
-.q h1,
-.a h1,
+.big-letter,
 .pagination-container,
 .title h1 {
     font-family: {block:IfTitleFont}{text:Title Font},{/block:IfTitleFont} georgia, serif;
@@ -533,6 +541,30 @@ body {
 #header.background-image .blog-title h1 {
     font-size: 64px;
     line-height: 64px;
+}
+
+.big-letter {
+    font-size: 22px;
+}
+.post.answer .title,
+.post.answer .answer .caption {
+    font-size: 15px;
+}
+.post.answer .title {
+    font-style: italic;
+}
+.post.answer .question .caption {
+    font-size: 18px;
+}
+
+.single-post .big-letter {
+    font-size: 30px;
+}
+.single-post .post.answer .answer .caption {
+    font-size: 18px;
+}
+.single-post .post.answer .question .caption {
+    font-size: 22px;
 }
 
 .metadata a,
@@ -698,8 +730,8 @@ body {
 /* Lightbox
 ********************************/
 
-#lightbox {
-    display: none;
+.lightbox {
+    display: block;
     position: fixed;
     top: 0;
     left: 0;
@@ -707,12 +739,30 @@ body {
     right: 0;
     overflow: auto;
     z-index: 1000;
+
+    visibility: hidden;
+    opacity: 0;
+
+    /* transition out */
+    -webkit-transition: opacity 0.1s ease-in-out, visibility 0s 0.1s linear;
+       -moz-transition: opacity 0.1s ease-in-out, visibility 0s 0.1s linear;
+        -ms-transition: opacity 0.1s ease-in-out, visibility 0s 0.1s linear;
+         -o-transition: opacity 0.1s ease-in-out, visibility 0s 0.1s linear;
+            transition: opacity 0.1s ease-in-out, visibility 0s 0.1s linear;
 }
-#lightbox.visible {
-    display: block;
+.lightbox.visible {
+    visibility: visible;
+    opacity: 1;
+
+    /* transition in */
+    -webkit-transition: opacity 0.1s 0.2s ease-in-out, visibility 0s 0s linear;
+       -moz-transition: opacity 0.1s 0.2s ease-in-out, visibility 0s 0s linear;
+        -ms-transition: opacity 0.1s 0.2s ease-in-out, visibility 0s 0s linear;
+         -o-transition: opacity 0.1s 0.2s ease-in-out, visibility 0s 0s linear;
+            transition: opacity 0.1s 0.2s ease-in-out, visibility 0s 0s linear;
 }
 
-#lightbox .close {
+.lightbox .close {
     position: fixed;
     top: 0;
     right: 0;
@@ -723,7 +773,7 @@ body {
     margin: 16px;
     border-radius: 2px;
 
-    background-color: {color:Header Background};
+    background-color: {color:Content Background};
 
     overflow: hidden;
     direction: ltr;
@@ -731,8 +781,8 @@ body {
     font-size: 0;
 }
 
-#lightbox .close:before,
-#lightbox .close:after {
+.lightbox .close:before,
+.lightbox .close:after {
     content: '';
     display: block;
     position: absolute;
@@ -750,17 +800,17 @@ body {
          -o-transition: border-color 0.2s ease-in-out;
             transition: border-color 0.2s ease-in-out;
 }
-#lightbox .close:after {
+.lightbox .close:after {
     -webkit-transform: rotate(-45deg);
         -ms-transform: rotate(-45deg);
             transform: rotate(-45deg);
 }
-#lightbox .close:hover:before,
-#lightbox .close:hover:after {
+.lightbox .close:hover:before,
+.lightbox .close:hover:after {
     border-top-color: {color:Body Text};
 }
 
-#lightbox .single-post {
+.lightbox .single-post {
     padding-top: 40px;
     padding-bottom: 40px;
 }
@@ -790,7 +840,7 @@ body {
     height: 310px;
     padding: 10px;
     overflow: hidden;
-    background-color: {color:Post Background};
+    background-color: {color:Content Background};
 }
 
 .single-post .post {
@@ -934,6 +984,48 @@ body {
     height: 100%;
 }
 
+.post.answer .title {
+    line-height: 24px;
+}
+.post.answer .question,
+.post.answer .answer {
+    position: relative;
+    padding: 0 0 0 40px;
+}
+.post.answer .big-letter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 40px;
+    text-align: center;
+}
+.post.answer .asker-avatar {
+    display: none;
+    vertical-align: top;
+    width: 24px;
+    height: 24px;
+    border-radius: 2px;
+}
+.post.answer .caption {
+    padding: 0 10px 10px;
+}
+
+.single-post .post.answer .question,
+.single-post .post.answer .answer {
+    position: relative;
+    padding: 4px 0 0 60px;
+}
+.post.answer .big-letter {
+    width: 60px;
+}
+.single-post .post.answer .asker-avatar {
+    display: inline-block;
+}
+.single-post .post.answer .caption {
+    padding: 0 0 35px;
+}
+
 .post-grid .post.audio .media-embed {
     overflow: hidden;
     border-radius: 2px;
@@ -1010,7 +1102,7 @@ body {
 
 .single-post .post.answer:before,
 .post.answer:hover:before {
-    border-top-color: #eeeeee;
+    border-top-color: #c9c9c9;
 }
 .single-post .post.quote:before,
 .post.quote:hover:before {
@@ -1038,7 +1130,7 @@ body {
     left: 0;
     bottom: 0;
     right: 0;
-    background-color: {color:Post Background};
+    background-color: {color:Content Background};
     opacity: 0;
     filter: alpha(opacity=0);
     cursor: pointer; 
@@ -1233,51 +1325,6 @@ span.odd, span.even  {
     margin: 0px auto 20px;
 }
 
-.asker-block, .answer-text {
-    display: block;
-    overflow: auto;
-}
-
-p.question {
-    padding-bottom: 10px;
-    padding-top: 10px;
-}
-
-p.album, p.question {
-    font-size: 24px;
-    line-height: 32px;
-}
-
-h1.qa-letter {
-    display: block;
-    float: left;
-    width: 45px;
-    position: relative;
-    bottom: 3px;
-    font-size: 30px;
-}
-
-.q {
-    margin-bottom: 20px;
-}
-
-img.asker {
-    float:left;
-    margin-right: 8px;
-    border-radius: 2px;
-    position: relative;
-    top: 2px;
-}
-
-p.asker {
-    font-style: italic;
-}
-
-p.question {
-    clear: both;
-}
-
-
 /* Metadata
 ********************************/
 
@@ -1461,18 +1508,6 @@ p.question {
         -o-animation: post-click 0.05s ease-in-out 2 alternate both;
            animation: post-click 0.05s ease-in-out 2 alternate both;
 }
-#lightbox.animate-in {
-   -webkit-animation: lightbox-in 0.2s ease-out 0.2s 1 both;
-      -moz-animation: lightbox-in 0.2s ease-out 0.2s 1 both;
-        -o-animation: lightbox-in 0.2s ease-out 0.2s 1 both;
-           animation: lightbox-in 0.2s ease-out 0.2s 1 both;
-}
-#lightbox.animate-out {
-   -webkit-animation: lightbox-out 0.1s ease-in 1 both;
-      -moz-animation: lightbox-out 0.1s ease-in 1 both;
-        -o-animation: lightbox-out 0.1s ease-in 1 both;
-           animation: lightbox-out 0.1s ease-in 1 both;
-}
 
 @-webkit-keyframes post-click {
     from {
@@ -1515,41 +1550,6 @@ p.question {
     }
 }
 
-@-webkit-keyframes lightbox-in {
-    from { top: 100%; }
-    to { top: 0; }
-}
-@-moz-keyframes lightbox-in {
-    from { top: 100%; }
-    to { top: 0; }
-}
-@-o-keyframes lightbox-in {
-    from { top: 100%; }
-    to { top: 0; }
-}
-@keyframes lightbox-in {
-    from { top: 100%; }
-    to { top: 0; }
-}
-
-@-webkit-keyframes lightbox-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-@-moz-keyframes lightbox-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-@-o-keyframes lightbox-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-@keyframes lightbox-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
-
 @media (max-width: 959px) {
     .page-min-width {
         min-width: 640px;
@@ -1591,7 +1591,7 @@ p.question {
         padding: 35px 20px 0;
     }
 
-    #lightbox .single-post {
+    .lightbox .single-post {
         padding-top: 80px;
     }
 
@@ -1690,7 +1690,7 @@ p.question {
 
     <body>
 
-        <div id="page" class="page-min-width">
+        <div id="page" class="page-min-width" data-page-type="{block:IndexPage}index{/block:IndexPage}{block:PermalinkPage}permalink{/block:PermalinkPage}">
 
             <div id="header" class="
                 {block:IfHeaderImage}background-image{/block:IfHeaderImage}
@@ -1729,12 +1729,18 @@ p.question {
             </div>
 
             {block:IndexPage}
-                <div id="lightbox">
+                <div id="lightbox" class="lightbox">
                     <div class="single-post page-width"></div>
                     <a class="close" href="/">Close</a>
                 </div>
                 <div id="content">
                     <div class="post-grid page-width">
+            {/block:IndexPage}
+            {block:PermalinkPage}
+                <div id="content">
+                    <div class="single-post page-width">
+            {/block:PermalinkPage}
+
                         {block:Posts}
 
                             <div class="post {PostType} post-id-{PostID}" id="post-{PostID}" data-post-id="{PostID}" data-permalink="{Permalink}">
@@ -1811,10 +1817,15 @@ p.question {
 
                                 {block:Video}
                                     <div class="media-embed">
-                                        <script class="template-replace" type="text/template">
+                                        {block:IndexPage}
+                                            <script class="template-replace" type="text/template">
+                                                {VideoEmbed-700}
+                                            </script>
+                                            <div class="video-thumbnail template-remove"></div>
+                                        {/block:IndexPage}
+                                        {block:PermalinkPage}
                                             {VideoEmbed-700}
-                                        </script>
-                                        <div class="video-thumbnail template-remove"></div>
+                                        {/block:PermalinkPage}
                                     </div>
                                     {block:Caption}
                                         <div class="caption">
@@ -1830,11 +1841,18 @@ p.question {
                                                 <img src="{AlbumArtURL}" alt=""/>
                                             {/block:AlbumArt}
                                         </div>
-                                        <script class="template-replace" type="text/template">
+                                        {block:IndexPage}
+                                            <script class="template-replace" type="text/template">
+                                                <div class="audio-embed">
+                                                    {AudioPlayer}
+                                                </div>
+                                            </script>
+                                        {/block:IndexPage}
+                                        {block:PermalinkPage}
                                             <div class="audio-embed">
                                                 {AudioPlayer}
                                             </div>
-                                        </script>
+                                        {/block:PermalinkPage}
                                     {/block:AudioPlayer}
                                     {block:AudioEmbed}
                                         <div class="media-embed">
@@ -1847,6 +1865,21 @@ p.question {
                                         </div>
                                     {/block:Caption}
                                 {/block:Audio}
+
+                                {block:Answer}
+                                    <div class="question">
+                                        <div class="big-letter">Q</div>
+                                        <div class="title">
+                                            <img class="asker-avatar" src="{AskerPortraitURL-24}">
+                                            {Asker} asked:
+                                        </div>
+                                        <div class="caption">{Question}</div>
+                                    </div>
+                                    <div class="answer">
+                                        <div class="big-letter">A</div>
+                                        <div class="caption">{Answer}</div>
+                                    </div>
+                                {/block:Answer}
 
                                 <div class="metadata">
                                     {block:Date}
@@ -1875,7 +1908,9 @@ p.question {
                                         </div>
                                     {/block:NoteCount}{/block:IfShowPostNotes}
                                     <div class="reblog-like-container">
+                                        {block:IndexPage}
                                         <script class="template-replace like_button" data-post-id="{PostID}" type="text/template">
+                                        {/block:IndexPage}
                                             {block:IfButtonsLight}
                                                 <div class="button">{ReblogButton color="white" size="20"}</div>
                                                 <div class="button">{LikeButton color="white" size="20"}</div>
@@ -1884,102 +1919,24 @@ p.question {
                                                 <div class="button">{ReblogButton color="black" size="20"}</div>
                                                 <div class="button">{LikeButton color="black" size="20"}</div>
                                             {/block:IfNotButtonsLight}
+                                        {block:IndexPage}
                                         </script>
+                                        {/block:IndexPage}
                                     </div>
                                 </div>
 
                             </div>
 
                         {/block:Posts}
+
+            {block:PermalinkPage}
+                    </div>
+                </div>
+            {/block:PermalinkPage}
+            {block:IndexPage}
                     </div>
                 </div>
             {/block:IndexPage}
-
-
-            {block:PermalinkPage}
-                <div id="content">
-                    <div class="single-post">
-                    </div>
-                </div>
-                Permalink page
-            {/block:PermalinkPage}
-
-
-
-            <div id="contentz" style="display:none;">
-            {block:Posts}
-
-                {block:Answer}
-                <!-- ANSWER POST
-                ///////////////////////////////////////////////////////-->
-
-                <div class="post answer">
-
-                    <div class="narrow">
-
-                        <div class="q">
-
-                            <h1 class="qa-letter">Q</h1>
-
-                            <div class="asker-block">
-                                <img class="asker" src="{AskerPortraitURL-24}">
-                                <p>{Asker} asked:</p>
-                                <p class="question">{Question}</p>
-                            </div>
-
-                        </div><!-- q end -->
-
-                        <div class="a">
-
-                            <h1 class="qa-letter">A</h1>
-
-                            <div class="caption" style="overflow:auto;">
-                                {Answer}
-                            </div>
-
-                        </div><!-- a end -->
-
-                        <div class="metadata">
-
-                            {block:Date}
-                            <div class="date">
-                                <a href="{Permalink}">{ShortMonth}. {DayOfMonth} {Year}</a>
-                            </div>
-                            {/block:Date}
-
-                            {block:ContentSource}
-                            <div class="date">
-                                <a href="{SourceURL}">Via {SourceTitle}</a>
-                            </div>
-                            {/block:ContentSource}
-
-                            {block:IfShowPostTags}
-                            {block:HasTags}
-                            <div class="tags">
-                                {block:Tags}
-                                <a href="{TagURL}">#{Tag}</a>
-                                {/block:Tags}
-                            </div>
-                            {/block:HasTags}
-                            {/block:IfShowPostTags}
-
-                            {block:IfShowPostNotes}
-                            {block:NoteCount}
-                            <div class="notes-count">
-                                <a href="{Permalink}">{NoteCountWithLabel}</a>
-                            </div>
-                            {/block:NoteCount}
-                            {/block:IfShowPostNotes}
-
-                        </div> <!-- metadata end -->
-
-                    </div> <!-- narrow end -->
-
-                </div> <!-- post end -->
-                {/block:Answer}
-
-            {/block:Posts}
-            </div>
 
             <div id="footer">
                 <div class="footer-content page-width">
