@@ -23,6 +23,7 @@ Revised May 8, 2013
 <!-- Options -->
 
         <meta name="if:Wide Images" content="1"/>
+        <meta name="if:Photoset Hover Cycle" content="1"/>
         <meta name="if:Show Description" content="0"/>
         <meta name="if:Show Post Tags" content="1"/>
         <meta name="if:Show Post Notes" content="1"/>
@@ -95,28 +96,33 @@ function open_lightbox(post, no_pushstate) {
 
     // Type-specific replacements
     if ($post.is('.photo')) {
-        $post.find('.image img').each(function(i, o) {
-            var $img = $(this);
-            $img.css({
-                'width': $img.data('width'),
-                'height': '',
-                'margin-left': '',
-                'margin-top': ''
+        var $img = $(this);
+
+        if ($post.find('.photoset').length) {
+            arrange_photoset($post.find('.photoset'));
+        } else {
+            $post.find('.image img').each(function(i, o) {
+                $img.css({
+                    'width': $img.data('width'),
+                    'height': '',
+                    'margin-left': '',
+                    'margin-top': ''
+                });
             });
+        }
 
-            // Image swap when high-res version is loaded
-            var $hires = $('<img/>', {
-                'alt': '',
-                'src': ''
-            }).on('load', function(e) {
-                $img.attr('src', $img.data('highRes'));
-            }).attr('src', $img.data('highRes'));
+        // Image swap when high-res version is loaded
+        var $hires = $('<img/>', {
+            'alt': '',
+            'src': ''
+        }).on('load', function(e) {
+            $img.attr('src', $img.data('highRes'));
+        }).attr('src', $img.data('highRes'));
 
-            // If it's already loaded
-            if ($hires.get(0).complete) {
-                $img.attr('src', $img.data('highRes'));
-            }
-        });
+        // If it's already loaded
+        if ($hires.get(0).complete) {
+            $img.attr('src', $img.data('highRes'));
+        }
     }
     if ($post.is('.audio')) {
         $post.find('iframe.tumblr_audio_player').each(function(i, o) {
@@ -205,6 +211,59 @@ function center_image(img) {
     }
 }
 
+function number_images(container, selector) {
+    var $photoset = $(container);
+    if (!selector) selector = '.image';
+
+    $photoset.find(selector).each(function(i, o) {
+        $(o).addClass('image-' + (i + 1));
+    });
+}
+
+function arrange_photoset(photoset) {
+    var $photoset = $(photoset);
+    var $image = $photoset.find('.photoset-image-wrapper');
+
+    // Determine the layout
+    var layout = $photoset.data('photoset-layout');
+    if (!layout) {
+        layout = '1';
+        while (layout.length < $image.length) {
+            layout += '1';
+        }
+    }
+    var rows = layout.toString().match(/./g);
+
+    // Break it into rows
+    var skip = 0;
+    $.each(rows, function(i, row) {
+        row = parseInt(row, 10);
+        var row_images = $image.slice(skip, skip + row);
+
+        // Clear the first one
+        $($image[skip]).addClass('first');
+        // No margin for the last one
+        $($image[skip + row - 1]).addClass('last');
+
+        // Resize the rows
+        var total_width = 0;
+        $.each(row_images, function(i, image) {
+            var $img = $(image).find('img');
+            total_width += $img.data('width');
+        });
+        var total = 100;
+        $.each(row_images, function(i, image) {
+            var $img = $(image).find('img');
+            $(image).css({
+                'width': (100 * $img.data('width') / total_width) + '%'
+            });
+        });
+
+        // Keep counting
+        skip += row;
+    });
+}
+
 function last_word(el, class_name, tag_name) {
     var $el = $(el);
     var $last = $el.find('*').last();
@@ -284,6 +343,16 @@ $(function(){
     // Center images in squares
     $('.post-grid .post.photo .image img').each(function(i, o) {
         center_image(o);
+    });
+
+    // Number photoset imges
+    $('.post.photo .photoset').each(function(i, o) {
+        number_images(o);
+    });
+
+    // Set up photoset
+    $('.single-post .post.photo .photoset').each(function(i, o) {
+        arrange_photoset(o)
     });
 
     // Add link arrow to last word
@@ -885,11 +954,14 @@ body {
 
 /* Post types
 ********************************/
+.post.photo .photoset,
 .post.photo .image {
     width: 100%;
     height: 100%;
     overflow: hidden;
 }
+.post.photo .photoset-image,
+.post.photo .photoset-image img,
 .post.photo .image,
 .post.photo .image img {
     border-radius: 2px;
@@ -897,6 +969,7 @@ body {
 .post.photo .caption {
     display: none;
 }
+.post.photo .photoset-image a,
 .post.photo .image a {
     display: block;
 }
@@ -916,6 +989,30 @@ body {
     width: auto;
     height: auto;
     margin: 0 auto;
+}
+
+.single-post .post.photo .photoset .photoset-image-wrapper {
+    float: left;
+    padding: 5px;
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+}
+.single-post .post.photo .photoset .photoset-image-wrapper.first {
+    clear: both;
+}
+.single-post .post.photo .photoset .photoset-image-wrapper.last {
+    float: right;
+}
+
+.single-post .post.photo .photoset img {
+    min-width: auto;
+    width: 100%;
+}
+.single-post .post.photo .photoset:after {
+    content: '';
+    display: block;
+    clear: both;
 }
 
 .post.link .title a {
@@ -1503,10 +1600,10 @@ span.odd, span.even  {
 }
 
 .post-grid .post.animate-click {
-   -webkit-animation: post-click 0.05s ease-in-out 2 alternate both;
-      -moz-animation: post-click 0.05s ease-in-out 2 alternate both;
-        -o-animation: post-click 0.05s ease-in-out 2 alternate both;
-           animation: post-click 0.05s ease-in-out 2 alternate both;
+    -webkit-animation: post-click 0.05s ease-in-out 2 alternate both;
+       -moz-animation: post-click 0.05s ease-in-out 2 alternate both;
+         -o-animation: post-click 0.05s ease-in-out 2 alternate both;
+            animation: post-click 0.05s ease-in-out 2 alternate both;
 }
 
 @-webkit-keyframes post-click {
@@ -1810,7 +1907,7 @@ span.odd, span.even  {
                                     <div class="image">
                                         {LinkOpenTag}
                                             <img src="{PhotoURL-400}" alt="{PhotoAlt}"
-                                                data-high-res="{PHotoURL-HighRes}"
+                                                data-high-res="{PhotoURL-HighRes}"
                                                 data-width="{PhotoWidth-HighRes}"
                                                 data-height="{PhotoHeight-HighRes}"
                                             />
@@ -1822,6 +1919,29 @@ span.odd, span.even  {
                                         </div>
                                     {/block:Caption}
                                 {/block:Photo}
+
+                                {block:Photoset}
+                                    <div class="photoset photoset-{PhotosetLayout}" data-photoset-layout="{PhotosetLayout}">
+                                        {block:Photos}
+                                            <div class="photoset-image-wrapper">
+                                                <div class="photoset-image">
+                                                    {LinkOpenTag}
+                                                        <img src="{PhotoURL-400}" alt="{PhotoAlt}"
+                                                            data-high-res="{PhotoURL-HighRes}"
+                                                            data-width="{PhotoWidth-HighRes}"
+                                                            data-height="{PhotoHeight-HighRes}"
+                                                        />
+                                                    {LinkCloseTag}
+                                                </div>
+                                            </div>
+                                        {/block:Photos}
+                                    </div>
+                                    {block:Caption}
+                                        <div class="caption">
+                                            {Body}
+                                        </div>
+                                    {/block:Caption}
+                                {/block:Photoset}
 
                                 {block:Video}
                                     <div class="media-embed">
@@ -1919,6 +2039,7 @@ span.odd, span.even  {
                                         {block:IndexPage}
                                         <script class="template-replace like_button" data-post-id="{PostID}" type="text/template">
                                         {/block:IndexPage}
+                                        {block:Date}
                                             {block:IfButtonsLight}
                                                 <div class="button">{ReblogButton color="white" size="20"}</div>
                                                 <div class="button">{LikeButton color="white" size="20"}</div>
@@ -1927,6 +2048,7 @@ span.odd, span.even  {
                                                 <div class="button">{ReblogButton color="black" size="20"}</div>
                                                 <div class="button">{LikeButton color="black" size="20"}</div>
                                             {/block:IfNotButtonsLight}
+                                        {/block:Date}
                                         {block:IndexPage}
                                         </script>
                                         {/block:IndexPage}
