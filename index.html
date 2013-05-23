@@ -66,6 +66,9 @@ Revised May 8, 2013
 
 <script type="text/javascript">
 
+/*! jsUri v1.1.1 | https://github.com/derek-watson/jsUri */
+var Query=function(a){"use strict";var b=function(a){var b=[],c,d,e,f;if(typeof a=="undefined"||a===null||a==="")return b;a.indexOf("?")===0&&(a=a.substring(1)),d=a.toString().split(/[&;]/);for(c=0;c<d.length;c++)e=d[c],f=e.split("="),b.push([f[0],f[1]]);return b},c=b(a),d=function(){var a="",b,d;for(b=0;b<c.length;b++)d=c[b],a.length>0&&(a+="&"),a+=d.join("=");return a.length>0?"?"+a:a},e=function(a){a=decodeURIComponent(a),a=a.replace("+"," ");return a},f=function(a){var b,d;for(d=0;d<c.length;d++){b=c[d];if(e(a)===e(b[0]))return b[1]}},g=function(a){var b=[],d,f;for(d=0;d<c.length;d++)f=c[d],e(a)===e(f[0])&&b.push(f[1]);return b},h=function(a,b){var d=[],f,g,h,i;for(f=0;f<c.length;f++)g=c[f],h=e(g[0])===e(a),i=e(g[1])===e(b),(arguments.length===1&&!h||arguments.length===2&&!h&&!i)&&d.push(g);c=d;return this},i=function(a,b,d){arguments.length===3&&d!==-1?(d=Math.min(d,c.length),c.splice(d,0,[a,b])):arguments.length>0&&c.push([a,b]);return this},j=function(a,b,d){var f=-1,g,j;if(arguments.length===3){for(g=0;g<c.length;g++){j=c[g];if(e(j[0])===e(a)&&decodeURIComponent(j[1])===e(d)){f=g;break}}h(a,d).addParam(a,b,f)}else{for(g=0;g<c.length;g++){j=c[g];if(e(j[0])===e(a)){f=g;break}}h(a),i(a,b,f)}return this};return{getParamValue:f,getParamValues:g,deleteParam:h,addParam:i,replaceParam:j,toString:d}},Uri=function(a){"use strict";var b=!1,c=function(a){var c={strict:/^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,loose:/^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/},d=["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],e={name:"queryKey",parser:/(?:^|&)([^&=]*)=?([^&]*)/g},f=c[b?"strict":"loose"].exec(a),g={},h=14;while(h--)g[d[h]]=f[h]||"";g[e.name]={},g[d[12]].replace(e.parser,function(a,b,c){b&&(g[e.name][b]=c)});return g},d=c(a||""),e=new Query(d.query),f=function(a){typeof a!="undefined"&&(d.protocol=a);return d.protocol},g=null,h=function(a){typeof a!="undefined"&&(g=a);return g===null?d.source.indexOf("//")!==-1:g},i=function(a){typeof a!="undefined"&&(d.userInfo=a);return d.userInfo},j=function(a){typeof a!="undefined"&&(d.host=a);return d.host},k=function(a){typeof a!="undefined"&&(d.port=a);return d.port},l=function(a){typeof a!="undefined"&&(d.path=a);return d.path},m=function(a){typeof a!="undefined"&&(e=new Query(a));return e},n=function(a){typeof a!="undefined"&&(d.anchor=a);return d.anchor},o=function(a){f(a);return this},p=function(a){h(a);return this},q=function(a){i(a);return this},r=function(a){j(a);return this},s=function(a){k(a);return this},t=function(a){l(a);return this},u=function(a){m(a);return this},v=function(a){n(a);return this},w=function(a){return m().getParamValue(a)},x=function(a){return m().getParamValues(a)},y=function(a,b){arguments.length===2?m().deleteParam(a,b):m().deleteParam(a);return this},z=function(a,b,c){arguments.length===3?m().addParam(a,b,c):m().addParam(a,b);return this},A=function(a,b,c){arguments.length===3?m().replaceParam(a,b,c):m().replaceParam(a,b);return this},B=function(){var a="",b=function(a){return a!==null&&a!==""};b(f())?(a+=f(),f().indexOf(":")!==f().length-1&&(a+=":"),a+="//"):h()&&b(j())&&(a+="//"),b(i())&&b(j())&&(a+=i(),i().indexOf("@")!==i().length-1&&(a+="@")),b(j())&&(a+=j(),b(k())&&(a+=":"+k())),b(l())?a+=l():b(j())&&(b(m().toString())||b(n()))&&(a+="/"),b(m().toString())&&(m().toString().indexOf("?")!==0&&(a+="?"),a+=m().toString()),b(n())&&(n().indexOf("#")!==0&&(a+="#"),a+=n());return a},C=function(){return new Uri(B())};return{protocol:f,hasAuthorityPrefix:h,userInfo:i,host:j,port:k,path:l,query:m,anchor:n,setProtocol:o,setHasAuthorityPrefix:p,setUserInfo:q,setHost:r,setPort:s,setPath:t,setQuery:u,setAnchor:v,getQueryParamValue:w,getQueryParamValues:x,deleteQueryParam:y,addQueryParam:z,replaceQueryParam:A,toString:B,clone:C}},jsUri=Uri;
+
 (function($){
 
 var options = {};
@@ -96,33 +99,35 @@ function open_lightbox(post, no_pushstate) {
 
     // Type-specific replacements
     if ($post.is('.photo')) {
-        var $img = $(this);
+        var $imgs = $post.find('.image img');
 
-        if ($post.find('.photoset').length) {
-            arrange_photoset($post.find('.photoset'));
-        } else {
-            $post.find('.image img').each(function(i, o) {
+        // Use high-res images in lightbox
+        $imgs.each(function(i, o) {
+            var $img = $(o);
+
+            // Auto width
+            if (!$img.is('.photoset-image')) {
                 $img.css({
                     'width': $img.data('width'),
                     'height': '',
                     'margin-left': '',
                     'margin-top': ''
                 });
-            });
-        }
+            }
 
-        // Image swap when high-res version is loaded
-        var $hires = $('<img/>', {
-            'alt': '',
-            'src': ''
-        }).on('load', function(e) {
-            $img.attr('src', $img.data('highRes'));
-        }).attr('src', $img.data('highRes'));
+            // Swap when loaded
+            var $hires = $('<img/>', {
+                'alt': '',
+                'src': ''
+            }).on('load', function(e) {
+                $img.attr('src', $img.data('highRes'));
+            }).attr('src', $img.data('highRes'));
 
-        // If it's already loaded
-        if ($hires.get(0).complete) {
-            $img.attr('src', $img.data('highRes'));
-        }
+            // If it's already loaded
+            if ($hires.get(0).complete) {
+                $img.attr('src', $img.data('highRes'));
+            }
+        });
     }
     if ($post.is('.audio')) {
         $post.find('iframe.tumblr_audio_player').each(function(i, o) {
@@ -140,6 +145,9 @@ function open_lightbox(post, no_pushstate) {
     $('body').addClass('no-scroll');
 
     // Post-processing
+    if ($post.is('.photo') && $post.find('.photoset-images').length) {
+        scale_photoset($post.find('.photoset-images'));
+    }
     if ($post.is('.audio')) {
         $post.find('iframe.spotify_audio_player').each(function(i, o) {
             var $player = $(this);
@@ -185,9 +193,11 @@ function reload_iframe(iframe) {
     $iframe.attr('src', url);
 }
 
-function center_image(img) {
+function center_image(img, selector) {
+    if (!selector) selector = '.image';
+
     var $img = $(img);
-    var $square = $img.closest('.image');
+    var $square = $img.closest(selector);
     var size = $square.width();
     var width = $img.data('width');
     var height = $img.data('height');
@@ -213,54 +223,31 @@ function center_image(img) {
 
 function number_images(container, selector) {
     var $photoset = $(container);
-    if (!selector) selector = '.image';
+    if (!selector) selector = '.photoset-image';
 
     $photoset.find(selector).each(function(i, o) {
         $(o).addClass('image-' + (i + 1));
     });
 }
 
-function arrange_photoset(photoset) {
+function scale_photoset(photoset) {
     var $photoset = $(photoset);
-    var $image = $photoset.find('.photoset-image-wrapper');
-
-    // Determine the layout
-    var layout = $photoset.data('photoset-layout');
-    if (!layout) {
-        layout = '1';
-        while (layout.length < $image.length) {
-            layout += '1';
-        }
-    }
-    var rows = layout.toString().match(/./g);
-
-    // Break it into rows
-    var skip = 0;
-    $.each(rows, function(i, row) {
-        row = parseInt(row, 10);
-        var row_images = $image.slice(skip, skip + row);
-
-        // Clear the first one
-        $($image[skip]).addClass('first');
-        // No margin for the last one
-        $($image[skip + row - 1]).addClass('last');
-
-        // Resize the rows
-        var total_width = 0;
-        $.each(row_images, function(i, image) {
-            var $img = $(image).find('img');
-            total_width += $img.data('width');
-        });
-        var total = 100;
-        $.each(row_images, function(i, image) {
-            var $img = $(image).find('img');
-            $(image).css({
-                'width': (100 * $img.data('width') / total_width) + '%'
-            });
-        });
-
-        // Keep counting
-        skip += row;
+    var $iframe = $photoset.find('iframe.photoset');
+    var zoom = Math.min($photoset.width() / $iframe.attr('width'), 1);
+    $iframe.css({
+        '-webkit-transform': 'scale(' + zoom + ')',
+           '-moz-transform': 'scale(' + zoom + ')',
+            '-ms-transform': 'scale(' + zoom + ')',
+             '-o-transform': 'scale(' + zoom + ')',
+                'transform': 'scale(' + zoom + ')',
+        '-webkit-transform-origin': '0 0',
+           '-moz-transform-origin': '0 0',
+            '-ms-transform-origin': '0 0',
+             '-o-transform-origin': '0 0',
+                'transform-origin': '0 0'
+    });
+    $photoset.css({
+        'height': zoom * $iframe.attr('height')
     });
 }
 
@@ -296,8 +283,51 @@ function video_placeholders(container) {
     var $container = $(container);
     var $thumbnail_container = $container.find('.video-thumbnail');
     var $video_template = $container.find('.template-replace');
+    var template_html = $video_template.html();
+
+    // Try to look up the video thumbnail
+    var found_thumbnail = true;
+    $($.trim(template_html)).find('iframe').andSelf().filter('iframe').each(function(i, o) {
+        if (
+            video_thumbnail($(o).attr('src'), function(url) {
+                $thumbnail_container.css('background-image', 'url(' + url + ')');
+            }, function() {
+                $thumbnail_container.html(template_html);
+            })
+        ) {
+            found_thumbnail = true;
+            return false;
+        }
+    });
+    if (found_thumbnail) return true;
+
     // If all else fails, just fill in the existing video info
-    $thumbnail_container.html($video_template.html());
+    $thumbnail_container.html(template_html);
+    return false;
+}
+
+function video_thumbnail(url, success, failure) {
+    if (!url) return false;
+
+    var uri, path_parts, id;
+
+    uri = new Uri(url);
+    path_parts = uri.path().split('/');
+    // YouTube
+    if (uri.host().match(/(.*\.)(youtube\.com|youtu\.be)/i)) {
+        if (!(id = uri.getQueryParamValue('v'))) {
+            id = path_parts[path_parts.length - 1];
+        }
+        if (id) {
+            success.apply(this, ['http://i.ytimg.com/vi/' + id + '/hqdefault.jpg']);
+            return 'http://i.ytimg.com/vi/' + id + '/hqdefault.jpg';
+        }
+        return false;
+    }
+
+    // Make a call
+
+    return false;
 }
 
 // On load...
@@ -346,13 +376,13 @@ $(function(){
     });
 
     // Number photoset imges
-    $('.post.photo .photoset').each(function(i, o) {
+    $('.post.photo .photoset-images').each(function(i, o) {
         number_images(o);
     });
 
     // Set up photoset
-    $('.single-post .post.photo .photoset').each(function(i, o) {
-        arrange_photoset(o)
+    $('.single-post .post.photo .photoset-images').each(function(i, o) {
+        scale_photoset(o)
     });
 
     // Add link arrow to last word
@@ -404,7 +434,7 @@ $(function(){
             switch (e.which) {
                 // ESC
                 case 27:
-                    if (options.lightbox_open) {
+                    if (options.lightbox_open && !(Tumblr && Tumblr.Lightbox && Tumblr.Lightbox.isOpen())) {
                         close_lightbox();
                         e.preventDefault();
                         e.stopPropagation();
@@ -424,6 +454,11 @@ $(function(){
                     break;
                 default: break;
             }
+        },
+
+        // Resize window
+        resize: function(e) {
+            scale_photoset('.single-post .post.photo .photoset-images');
         }
 
     });
@@ -460,16 +495,6 @@ $(function(){
 
 <style type="text/css">
 
-::selection {
-    background: #fff882; /* Safari */
-    color: #444444;
-}
-
-::-moz-selection {
-    background: #fff882; /* Firefox */
-    color: #444444;
-}
-
 body {
     margin: 0;
     margin-bottom: 0;
@@ -504,6 +529,16 @@ h1, h2, h3 {
 
 /* Global colors
 ********************************/
+
+::selection {
+    background: {color:Header Text};
+    color: {color:Header Background};
+}
+
+::-moz-selection {
+    background: {color:Header Text};
+    color: {color:Header Background};
+}
 
 body {
     color: {color:Body Text};
@@ -954,7 +989,6 @@ body {
 
 /* Post types
 ********************************/
-.post.photo .photoset,
 .post.photo .image {
     width: 100%;
     height: 100%;
@@ -966,6 +1000,14 @@ body {
 .post.photo .image img {
     border-radius: 2px;
 }
+
+.post.photo .photoset-images {
+    overflow: hidden;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+}
+
 .post.photo .caption {
     display: none;
 }
@@ -991,25 +1033,29 @@ body {
     margin: 0 auto;
 }
 
-.single-post .post.photo .photoset .photoset-image-wrapper {
+.single-post .post.photo .photoset-images .photoset-image-wrapper {
     float: left;
     padding: 5px;
     -webkit-box-sizing: border-box;
        -moz-box-sizing: border-box;
             box-sizing: border-box;
 }
-.single-post .post.photo .photoset .photoset-image-wrapper.first {
+.single-post .post.photo .photoset-images .photoset-image-wrapper.first {
     clear: both;
 }
-.single-post .post.photo .photoset .photoset-image-wrapper.last {
+.single-post .post.photo .photoset-images .photoset-image-wrapper.last {
     float: right;
 }
-
-.single-post .post.photo .photoset img {
+.single-post .post.photo .photoset-images .photoset-image {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+.single-post .post.photo .photoset-images img {
     min-width: auto;
     width: 100%;
 }
-.single-post .post.photo .photoset:after {
+.single-post .post.photo .photoset-images:after {
     content: '';
     display: block;
     clear: both;
@@ -1167,6 +1213,12 @@ body {
     display: block;
 }
 
+.post.video .video-thumbnail {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+}
 .single-post .post.video .media-embed {
     margin: 0 -130px;
     width: 900px;
@@ -1599,6 +1651,10 @@ span.odd, span.even  {
     text-decoration: underline;
 }
 
+.sprite {
+    
+}
+
 .post-grid .post.animate-click {
     -webkit-animation: post-click 0.05s ease-in-out 2 alternate both;
        -moz-animation: post-click 0.05s ease-in-out 2 alternate both;
@@ -1921,20 +1977,30 @@ span.odd, span.even  {
                                 {/block:Photo}
 
                                 {block:Photoset}
-                                    <div class="photoset photoset-{PhotosetLayout}" data-photoset-layout="{PhotosetLayout}">
-                                        {block:Photos}
-                                            <div class="photoset-image-wrapper">
-                                                <div class="photoset-image">
-                                                    {LinkOpenTag}
-                                                        <img src="{PhotoURL-400}" alt="{PhotoAlt}"
-                                                            data-high-res="{PhotoURL-HighRes}"
-                                                            data-width="{PhotoWidth-HighRes}"
-                                                            data-height="{PhotoHeight-HighRes}"
-                                                        />
-                                                    {LinkCloseTag}
-                                                </div>
+                                    <div class="photoset-images photoset-{PhotosetLayout}" data-photoset-layout="{PhotosetLayout}">
+                                        {block:IndexPage}
+                                            <script class="template-replace" type="text/template">
+                                                {Photoset-700}
+                                            </script>
+                                            <div class="template-remove">
+                                                {block:Photos}
+                                                    <div class="photoset-image-wrapper">
+                                                        <div class="image photoset-image">
+                                                            {LinkOpenTag}
+                                                                <img src="{PhotoURL-400}" alt="{PhotoAlt}"
+                                                                    data-high-res="{PhotoURL-HighRes}"
+                                                                    data-width="{PhotoWidth-HighRes}"
+                                                                    data-height="{PhotoHeight-HighRes}"
+                                                                />
+                                                            {LinkCloseTag}
+                                                        </div>
+                                                    </div>
+                                                {/block:Photos}
                                             </div>
-                                        {/block:Photos}
+                                        {/block:IndexPage}
+                                        {block:PermalinkPage}
+                                            {Photoset-700}
+                                        {/block:PermalinkPage}
                                     </div>
                                     {block:Caption}
                                         <div class="caption">
