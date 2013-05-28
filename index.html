@@ -146,7 +146,8 @@ function open_lightbox(post, no_pushstate) {
 
     // Post-processing
     if ($post.is('.photo') && $post.find('.photoset-images').length) {
-        scale_photoset($post.find('.photoset-images'));
+        photoset_preprocessing($post.find('.photoset-images'));
+        photoset_layout($post.find('.photoset-images'));
     }
     if ($post.is('.audio')) {
         $post.find('iframe.spotify_audio_player').each(function(i, o) {
@@ -197,25 +198,26 @@ function center_image(img, selector) {
     if (!selector) selector = '.image';
 
     var $img = $(img);
-    var $square = $img.closest(selector);
-    var size = $square.width();
+    var $box = $img.closest(selector);
+    var box_width = $box.width();
+    var box_height = $box.height();
     var width = $img.data('width');
     var height = $img.data('height');
     // Landscape
     if (width > height) {
         $img.css({
-            'width': size * width / height,
-            'height': size,
+            'width': box_height * width / height,
+            'height': box_height,
             'margin-top': '',
-            'margin-left': 0.5 * size * (1 - width / height)
+            'margin-top': -0.5 * (box_height * width / height - box_width)
         });
     }
     // Portrait
     else {
         $img.css({
-            'width': size,
-            'height': size * height / width,
-            'margin-top': 0.5 * size * (1 - height / width),
+            'width': box_width,
+            'height': box_width * height / width,
+            'margin-top': -0.5 * (box_width * height / width - box_height),
             'margin-left': ''
         });
     }
@@ -230,24 +232,71 @@ function number_images(container, selector) {
     });
 }
 
-function scale_photoset(photoset) {
+function photoset_preprocessing(photoset) {
     var $photoset = $(photoset);
-    var $iframe = $photoset.find('iframe.photoset');
-    var zoom = Math.min($photoset.width() / $iframe.attr('width'), 1);
-    $iframe.css({
-        '-webkit-transform': 'scale(' + zoom + ')',
-           '-moz-transform': 'scale(' + zoom + ')',
-            '-ms-transform': 'scale(' + zoom + ')',
-             '-o-transform': 'scale(' + zoom + ')',
-                'transform': 'scale(' + zoom + ')',
-        '-webkit-transform-origin': '0 0',
-           '-moz-transform-origin': '0 0',
-            '-ms-transform-origin': '0 0',
-             '-o-transform-origin': '0 0',
-                'transform-origin': '0 0'
+    var $image_wrappers = $photoset.find('.photoset-image-wrapper');
+    if (!$image_wrappers.length) return;
+
+    var layout = $photoset.data('photoset-layout').toString().match(/./g);
+    var offset = 0;
+    $.each(layout, function(i, row) {
+        row = parseInt(row, 10);
+        var $images = $image_wrappers.slice(offset, offset + row);
+
+        // Mark the first and last
+        $images.removeClass('first last');
+        $images.first().addClass('first');
+        $images.last().addClass('last');
+
+        // Find the widest image
+        var widest_ratio = 0;
+        $images.each(function(i, image) {
+            var $img = $(image).find('img');
+            var ratio = $img.data('width') / $img.data('height');
+            $img.data('aspect-ratio', ratio);
+            if (ratio > widest_ratio) {
+                widest_ratio = ratio;
+            }
+        });
+
+        // Save row data
+        $images.addClass('photoset-row-' + i).data({
+            'row': i,
+            'row-images': row,
+            'row-ratio': widest_ratio // Does not include margins
+        });
+
+        // Next row
+        offset += row;
     });
-    $photoset.css({
-        'height': zoom * $iframe.attr('height')
+}
+
+function photoset_layout(photoset) {
+    var $photoset = $(photoset);
+    var $image_wrappers = $photoset.find('.photoset-image-wrapper');
+
+    var layout = $photoset.data('photoset-layout').toString().match(/./g);
+    var total_width = $photoset.width();
+
+    var padding = {
+        top: parseInt($image_wrappers.first().css('padding-top'), 10) || 0,
+        right: parseInt($image_wrappers.first().css('padding-right'), 10) || 0,
+        bottom: parseInt($image_wrappers.first().css('padding-bottom'), 10) || 0,
+        left: parseInt($image_wrappers.first().css('padding-left'), 10) || 0
+    };
+    padding.horizontal = padding.left + padding.right;
+    padding.vertical = padding.top + padding.bottom;
+
+    $.each(layout, function(i, row) {
+        var $row = $image_wrappers.filter('.photoset-row-' + i);
+        $row.css({
+            'width': (100 / row) + '%',
+            'height': Math.floor((total_width / row - padding.horizontal) / $row.data('row-ratio') + padding.vertical)
+        });
+    });
+
+    $image_wrappers.find('img').each(function(i, o) {
+        center_image(o);
     });
 }
 
@@ -382,7 +431,8 @@ $(function(){
 
     // Set up photoset
     $('.single-post .post.photo .photoset-images').each(function(i, o) {
-        scale_photoset(o)
+        photoset_preprocessing(o);
+        photoset_layout(o);
     });
 
     // Add link arrow to last word
@@ -458,7 +508,7 @@ $(function(){
 
         // Resize window
         resize: function(e) {
-            scale_photoset('.single-post .post.photo .photoset-images');
+            photoset_layout('.single-post .post.photo .photoset-images');
         }
 
     });
@@ -1046,10 +1096,15 @@ body {
 .single-post .post.photo .photoset-images .photoset-image-wrapper.last {
     float: right;
 }
+.single-post .post.photo .photoset-images .photoset-image-wrapper.first.last {
+    width: 100%;
+    float: left;
+}
 .single-post .post.photo .photoset-images .photoset-image {
     overflow: hidden;
     width: 100%;
     height: 100%;
+    margin: 0;
 }
 .single-post .post.photo .photoset-images img {
     min-width: auto;
@@ -1978,29 +2033,19 @@ span.odd, span.even  {
 
                                 {block:Photoset}
                                     <div class="photoset-images photoset-{PhotosetLayout}" data-photoset-layout="{PhotosetLayout}">
-                                        {block:IndexPage}
-                                            <script class="template-replace" type="text/template">
-                                                {Photoset-700}
-                                            </script>
-                                            <div class="template-remove">
-                                                {block:Photos}
-                                                    <div class="photoset-image-wrapper">
-                                                        <div class="image photoset-image">
-                                                            {LinkOpenTag}
-                                                                <img src="{PhotoURL-400}" alt="{PhotoAlt}"
-                                                                    data-high-res="{PhotoURL-HighRes}"
-                                                                    data-width="{PhotoWidth-HighRes}"
-                                                                    data-height="{PhotoHeight-HighRes}"
-                                                                />
-                                                            {LinkCloseTag}
-                                                        </div>
-                                                    </div>
-                                                {/block:Photos}
+                                        {block:Photos}
+                                            <div class="photoset-image-wrapper">
+                                                <div class="image photoset-image">
+                                                    {LinkOpenTag}
+                                                        <img src="{PhotoURL-400}" alt="{PhotoAlt}"
+                                                            data-high-res="{PhotoURL-HighRes}"
+                                                            data-width="{PhotoWidth-HighRes}"
+                                                            data-height="{PhotoHeight-HighRes}"
+                                                        />
+                                                    {LinkCloseTag}
+                                                </div>
                                             </div>
-                                        {/block:IndexPage}
-                                        {block:PermalinkPage}
-                                            {Photoset-700}
-                                        {/block:PermalinkPage}
+                                        {/block:Photos}
                                     </div>
                                     {block:Caption}
                                         <div class="caption">
