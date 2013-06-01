@@ -23,6 +23,7 @@ Revised May 8, 2013
 <!-- Options -->
 
         <meta name="if:Photoset Hover Cycle" content="1"/>
+        <meta name="if:Use Photoset Layout" content="1"/>
         <meta name="if:Show Description" content="0"/>
         <meta name="if:Show Post Tags" content="1"/>
         <meta name="if:Show Post Notes" content="1"/>
@@ -35,7 +36,7 @@ Revised May 8, 2013
         <meta name="if:Header Left Navigation" content="0"/>
         <meta name="if:Centered Footer" content="0"/>
         <meta name="if:Endless Scrolling" content="0"/>
-        <meta name="if:Buttons Light" content="0"/>
+        <meta name="if:Light Buttons" content="0"/>
         <meta name="if:Promote Spectator Theme" content="1"/>
         <meta name="color:Header Background" content="#ffffff"/>
         <meta name="color:Header Text" content="#ee6644"/>
@@ -111,7 +112,7 @@ function open_lightbox(post, no_pushstate) {
             var $img = $(o);
 
             // Auto width
-            if (!$img.is('.photoset-image')) {
+            if (!$img.is('.photoset-image img') || $img.is('.inline .photoset-image img')) {
                 $img.css({
                     'width': $img.data('width'),
                     'height': '',
@@ -134,6 +135,7 @@ function open_lightbox(post, no_pushstate) {
             }
         });
     }
+
     if ($post.is('.audio')) {
         $post.find('iframe.tumblr_audio_player').each(function(i, o) {
             var $player = $(this);
@@ -152,7 +154,7 @@ function open_lightbox(post, no_pushstate) {
     // Post-processing
     if ($post.is('.photo') && $post.find('.photoset-images').length) {
         photoset_preprocessing($post.find('.photoset-images'));
-        photoset_layout($post.find('.photoset-images'));
+        photoset_layout($post.find('.photoset-images:not(.inline)'));
     }
     if ($post.is('.audio')) {
         $post.find('iframe.spotify_audio_player').each(function(i, o) {
@@ -498,7 +500,9 @@ $(function(){
     // Set up photoset
     $('.single-post .post.photo .photoset-images').each(function(i, o) {
         photoset_preprocessing(o);
-        photoset_layout(o);
+        if (!$(o).is('.inline')) {
+            photoset_layout(o);
+        }
     });
 
     // Add link arrow to last word
@@ -574,7 +578,7 @@ $(function(){
 
         // Resize window
         resize: function(e) {
-            photoset_layout('.single-post .post.photo .photoset-images');
+            photoset_layout('.single-post .post.photo .photoset-images:not(.inline)');
         }
 
     });
@@ -713,17 +717,14 @@ a {
 }
 
 a {
-    -webkit-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-       -moz-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-        -ms-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-         -o-transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-            transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+    position: relative;
 }
 a:hover {
     color: {color:Link Hover};
 }
 
 a:active {
+    top: 1px;
     outline: none;
     color: {color:Link Active};
 }
@@ -846,7 +847,7 @@ body {
 
 .single-post.page-width {
     width: 900px;
-    padding: 10px 30px;
+    padding: 40px 30px;
 }
 
 .footer-content.page-width {
@@ -1042,11 +1043,6 @@ body {
     border-top-color: {color:Body Text};
 }
 
-.lightbox .single-post {
-    padding-top: 40px;
-    padding-bottom: 40px;
-}
-
 /* Post wrappers
 ********************************/
 
@@ -1188,10 +1184,18 @@ body {
     min-width: auto;
     width: 100%;
 }
+.single-post .post.photo .photoset-images.inline img {
+    width: auto;
+}
 .single-post .post.photo .photoset-images:after {
     content: '';
     display: block;
     clear: both;
+}
+.single-post .post.photo .photoset-images.inline .photoset-image-wrapper {
+    float: none;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .post.link .title a {
@@ -1908,7 +1912,7 @@ span.odd, span.even  {
 
     .single-post.page-width {
         width: 600px;
-        padding: 10px 20px;
+        padding: 40px 20px;
     }
 
     .single-post .post {
@@ -1937,12 +1941,17 @@ span.odd, span.even  {
         width: 100%;
         height: 360px;
     }
+
+    .pagination-container,
+    .footer-content .links {
+        max-width: 50%;
+    }
 }
 
 @media (max-width: 659px) {
     .single-post.page-width {
         width: auto;
-        padding: 10px 20px;
+        padding: 40px 20px;
     }
 
     .lightbox .single-post {
@@ -1989,7 +1998,7 @@ span.odd, span.even  {
 
     .single-post.page-width {
         width: auto;
-        padding: 10px 20px;
+        padding: 40px 20px;
     }
 
     .lightbox .single-post {
@@ -2010,6 +2019,13 @@ span.odd, span.even  {
     .footer-content.page-width {
         width: 300px;
         padding: 35px 10px 0;
+    }
+
+    .pagination-container,
+    .footer-content .links,
+    .copyright {
+        text-align: center;
+        float: none;
     }
 }
 
@@ -2166,12 +2182,15 @@ span.odd, span.even  {
                                 {/block:Photo}
 
                                 {block:Photoset}
-                                    <div class="photoset-images photoset-{PhotosetLayout}{block:ifPhotosetHoverCycle} hover-cycle{/block:ifPhotosetHoverCycle}" data-photoset-layout="{PhotosetLayout}">
+                                    <div class="photoset-images photoset-{PhotosetLayout}
+                                        {block:IfPhotosetHoverCycle}hover-cycle{/block:IfPhotosetHoverCycle}
+                                        {block:IfNotUsePhotosetLayout}inline{/block:IfNotUsePhotosetLayout}
+                                    " data-photoset-layout="{PhotosetLayout}">
                                         {block:Photos}
                                             <div class="photoset-image-wrapper">
                                                 <div class="image photoset-image">
                                                     {LinkOpenTag}
-                                                        <img src="{PhotoURL-400}" alt="{PhotoAlt}"
+                                                        <img src="{block:PermalinkPage}{PhotoURL-HighRes}{/block:PermalinkPage}{block:IndexPage}{PhotoURL-400}{/block:IndexPage}" alt="{PhotoAlt}"
                                                             data-high-res="{PhotoURL-HighRes}"
                                                             data-width="{PhotoWidth-HighRes}"
                                                             data-height="{PhotoHeight-HighRes}"
@@ -2285,14 +2304,14 @@ span.odd, span.even  {
                                         <script class="template-replace like_button" data-post-id="{PostID}" type="text/template">
                                         {/block:IndexPage}
                                         {block:Date}
-                                            {block:IfButtonsLight}
+                                            {block:IfLightButtons}
                                                 <div class="button">{ReblogButton color="white" size="20"}</div>
                                                 <div class="button">{LikeButton color="white" size="20"}</div>
-                                            {/block:IfButtonsLight}
-                                            {block:IfNotButtonsLight}
+                                            {/block:IfLightButtons}
+                                            {block:IfNotLightButtons}
                                                 <div class="button">{ReblogButton color="black" size="20"}</div>
                                                 <div class="button">{LikeButton color="black" size="20"}</div>
-                                            {/block:IfNotButtonsLight}
+                                            {/block:IfNotLightButtons}
                                         {/block:Date}
                                         {block:IndexPage}
                                         </script>
