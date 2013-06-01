@@ -242,14 +242,52 @@ function photoset_hover_cycle(photoset) {
     var $post = $photoset.closest('.post');
     if (!$post.length) return;
 
+    var next_timer;
+    var $images = $photoset.find('.image');
     var current_image = 0;
+    var total_images = $images.length;
 
+    // Image cycling functions
+    function set_image(to, from) {
+        if (typeof from !== 'undefined' && from !== to) {
+            $($images[from]).removeClass('current');
+        }
+        $($images[to]).addClass('current');
+    };
+
+    function start_cycle(interval) {
+        clearTimeout(next_timer);
+
+        if (typeof interval !== 'number') interval = 1000;
+
+        set_image((current_image + 1) % total_images, current_image);
+        current_image = (current_image + 1) % total_images;
+
+        if (interval > 0) {
+            next_timer = setTimeout(function() {
+                start_cycle(interval);
+            }, interval);
+        }
+    }
+
+    function stop_cycle(reset) {
+        clearTimeout(next_timer);
+        if (reset) {
+            set_image(0, current_image);
+            current_image = 0;
+        }
+    }
+
+    // Set first image
+    set_image(0);
+
+    // Listen to mouse hovers to start and stop
     $post.on({
         mouseenter: function(e) {
-
+            start_cycle(2000);
         },
         mouseleave: function(e) {
-
+            stop_cycle(true);
         }
     });
 }
@@ -1280,6 +1318,27 @@ body {
 }
 .post-grid .post.photo .photoset-images .image-1 {
     visibility: visible;
+}
+.post-grid .post.photo .photoset-images.hover-cycle .image-1,
+.post-grid .post.photo .photoset-images.hover-cycle .image {
+    position: relative;
+    visibility: visible;
+    opacity: 0;
+    z-index: 0;
+    -webkit-transition: opacity 0.2s 0.2s ease-in-out;
+       -moz-transition: opacity 0.2s 0.2s ease-in-out;
+        -ms-transition: opacity 0.2s 0.2s ease-in-out;
+         -o-transition: opacity 0.2s 0.2s ease-in-out;
+            transition: opacity 0.2s 0.2s ease-in-out;
+}
+.post-grid .post.photo .photoset-images.hover-cycle .image.current {
+    opacity: 1;
+    z-index: 1;
+    -webkit-transition-delay: 0s;
+       -moz-transition-delay: 0s;
+        -ms-transition-delay: 0s;
+         -o-transition-delay: 0s;
+            transition-delay: 0s;
 }
 
 .post-grid .post.audio .media-embed {
