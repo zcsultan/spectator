@@ -22,17 +22,21 @@ Revised May 8, 2013
 
 <!-- Options -->
 
-        <meta name="if:Wide Images" content="1"/>
         <meta name="if:Photoset Hover Cycle" content="1"/>
         <meta name="if:Show Description" content="0"/>
         <meta name="if:Show Post Tags" content="1"/>
         <meta name="if:Show Post Notes" content="1"/>
         <meta name="if:Show Copyright" content="0"/>
         <meta name="if:Show Archive Navigation Link" content="1"/>
-        <meta name="if:Header Background Image" content="0"/>
+        <meta name="if:Centered Header" content="0"/>
+        <meta name="if:Stretched Header Image" content="0"/>
+        <meta name="if:Tiled Header Image" content="0"/>
         <meta name="if:Show Header Navigation" content="1"/>
         <meta name="if:Header Left Navigation" content="0"/>
+        <meta name="if:Centered Footer" content="0"/>
+        <meta name="if:Endless Scrolling" content="0"/>
         <meta name="if:Buttons Light" content="0"/>
+        <meta name="if:Promote Spectator Theme" content="1"/>
         <meta name="color:Header Background" content="#ffffff"/>
         <meta name="color:Header Text" content="#ee6644"/>
         <meta name="color:Header Link Text" content="#888888"/>
@@ -47,6 +51,7 @@ Revised May 8, 2013
         <meta name="color:Link Underline" content="#c9c9c9"/>
         <meta name="color:Post Accent" content="#c9c9c9"/>
         <meta name="image:Header" content=""/>
+        <meta name="image:Logo" content=""/>
         <meta name="text:TypeKit ID" content=""/>
         <meta name="text:Header Font" content="helvetica"/>
         <meta name="text:Body Font" content="georgia"/>
@@ -209,7 +214,7 @@ function center_image(img, selector) {
             'width': box_height * width / height,
             'height': box_height,
             'margin-top': '',
-            'margin-top': -0.5 * (box_height * width / height - box_width)
+            'margin-left': -0.5 * (box_height * width / height - box_width)
         });
     }
     // Portrait
@@ -229,6 +234,23 @@ function number_images(container, selector) {
 
     $photoset.find(selector).each(function(i, o) {
         $(o).addClass('image-' + (i + 1));
+    });
+}
+
+function photoset_hover_cycle(photoset) {
+    var $photoset = $(photoset);
+    var $post = $photoset.closest('.post');
+    if (!$post.length) return;
+
+    var current_image = 0;
+
+    $post.on({
+        mouseenter: function(e) {
+
+        },
+        mouseleave: function(e) {
+
+        }
     });
 }
 
@@ -274,6 +296,7 @@ function photoset_preprocessing(photoset) {
 function photoset_layout(photoset) {
     var $photoset = $(photoset);
     var $image_wrappers = $photoset.find('.photoset-image-wrapper');
+    if (!$image_wrappers.length) return;
 
     var layout = $photoset.data('photoset-layout').toString().match(/./g);
     var total_width = $photoset.width();
@@ -427,6 +450,11 @@ $(function(){
     // Number photoset imges
     $('.post.photo .photoset-images').each(function(i, o) {
         number_images(o);
+    });
+
+    // Photoset hover cycle
+    $('.post-grid .post.photo .photoset-images.hover-cycle').each(function(i, o) {
+        photoset_hover_cycle(o);
     });
 
     // Set up photoset
@@ -612,11 +640,20 @@ a {
 #header {
     color: {color:Header Text};
     background-color: {color:Header Background};
-}
-#header.background-image {
     {block:IfHeaderImage}background-image: url('{image:Header}');{/block:IfHeaderImage}
-    background-size: cover;
+    background-repeat: no-repeat;
     background-position: center center;
+    background-size: contain;
+}
+#header.centered-header {
+    background-size: contain;
+}
+#header.stretched-header {
+    background-size: cover;
+}
+#header.tiled-header {
+    background-repeat: repeat;
+    background-size: auto;
 }
 
 #header h1 a:hover,
@@ -692,7 +729,7 @@ body {
     line-height: 28px;
     text-align: center;
 }
-#header.background-image .blog-title h1 {
+#header.centered-header .blog-title h1 {
     font-size: 64px;
     line-height: 64px;
 }
@@ -760,7 +797,7 @@ body {
     width: 930px;
     padding: 0 15px;
 }
-.background-image .header-content.page-width {
+.centered-header .header-content.page-width {
     width: 900px;
     padding: 0 30px;
 }
@@ -864,7 +901,7 @@ body {
     margin-left: 15px;
 }
 
-#header.background-image .links {
+#header.centered-header .links {
     position: relative;
     top: auto;
     left: auto;
@@ -872,13 +909,16 @@ body {
     padding: 11px 20px;
     border-bottom: 1px solid {color:Header Background};
 }
-#header.background-image .links ul {
+#header.centered-header .links ul {
     text-align: center;
 }
 
-#header.background-image .blog-title {
+#header.centered-header .blog-title {
     float: none;
     padding: 75px 20px 95px;
+    {block:IfCenteredHeader}{block:IfNotShowHeaderNavigation}
+        padding-bottom: 75px;
+    {/block:IfNotShowHeaderNavigation}{/block:IfCenteredHeader}
 }
 
 /* Lightbox
@@ -1222,6 +1262,24 @@ body {
 }
 .single-post .post.answer .caption {
     padding: 0 0 35px;
+}
+
+.post-grid .post.photo .photoset-images {
+    width: 100%;
+    height: 100%;
+}
+.post-grid .post.photo .photoset-images .photoset-image-wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+.post-grid .post.photo .photoset-images .image {
+    visibility: hidden;
+}
+.post-grid .post.photo .photoset-images .image-1 {
+    visibility: visible;
 }
 
 .post-grid .post.audio .media-embed {
@@ -1653,9 +1711,16 @@ span.odd, span.even  {
 
 .promo {
     clear: both;
-    padding: 20px 0;
+    padding: 20px 0 0;
+    {block:IfNotPromoteSpectatorTheme}display: none;{/block:IfNotPromoteSpectatorTheme}
 }
 
+.centered-footer .pagination-container,
+.centered-footer .footer-content .links,
+.centered-footer .copyright {
+    text-align: center;
+    float: none;
+}
 
 
 /* Notes and comments
@@ -1773,7 +1838,7 @@ span.odd, span.even  {
         width: 620px;
         padding: 0 10px;
     }
-    .background-image .header-content.page-width {
+    .centered-header .header-content.page-width {
         width: 600px;
         padding: 0 20px;
     }
@@ -1796,7 +1861,7 @@ span.odd, span.even  {
 
     .footer-content.page-width {
         width: 600px;
-        padding: 35px 20px 0;
+        padding: 35px 20px 20px;
     }
 
     .lightbox .single-post {
@@ -1854,7 +1919,7 @@ span.odd, span.even  {
         padding: 0 5px;
     }
 
-    .background-image .header-content.page-width {
+    .centered-header .header-content.page-width {
         width: 300px;
         padding: 0 10px;
     }
@@ -1909,33 +1974,43 @@ span.odd, span.even  {
         <div id="page" class="page-min-width" data-page-type="{block:IndexPage}index{/block:IndexPage}{block:PermalinkPage}permalink{/block:PermalinkPage}">
 
             <div id="header" class="
-                {block:IfHeaderImage}background-image{/block:IfHeaderImage}
-                {block:IfHeaderLeftNavigation}left-navigation{/block:IfHeaderLeftNavigation}
+                {block:IfCenteredHeader}centered-header{/block:IfCenteredHeader}
+                {block:IfStretchedHeaderImage}stretched-header{/block:IfStretchedHeaderImage}
+                {block:IfTiledHeaderImage}tiled-header{/block:IfTiledHeaderImage}
+                {block:IfHeaderLeftNavigation}left-navigation{/block:IfHeaderLeftNavigation}Header}
             ">
                 <div class="header-content page-width">
 
-                    <div class="links">
-                        <ul>
-                            <li><a href="/">Home</a></li>
-                            {block:HasPages}
-                            {block:Pages}
-                            <li><a href="{URL}">{Label}</a></li>
-                            {/block:Pages}
-                            {/block:HasPages}
-                            {block:AskEnabled}
-                            <li><a href="/ask">{AskLabel}</a></li>
-                            {/block:AskEnabled}
-                            {block:SubmissionsEnabled}
-                            <li><a href="/submit">{SubmitLabel}</a></li>
-                            {/block:SubmissionsEnabled}
-                            {block:IfShowArchiveNavigationLink}
-                            <li><a href="/archive">Archive</a></li>
-                            {/block:IfShowArchiveNavigationLink}
-                        </ul>
-                    </div>
+                    {block:IfShowHeaderNavigation}
+                        <div class="links">
+                            <ul>
+                                <li><a href="/">Home</a></li>
+                                {block:HasPages}
+                                {block:Pages}
+                                <li><a href="{URL}">{Label}</a></li>
+                                {/block:Pages}
+                                {/block:HasPages}
+                                {block:AskEnabled}
+                                <li><a href="/ask">{AskLabel}</a></li>
+                                {/block:AskEnabled}
+                                {block:SubmissionsEnabled}
+                                <li><a href="/submit">{SubmitLabel}</a></li>
+                                {/block:SubmissionsEnabled}
+                                {block:IfShowArchiveNavigationLink}
+                                <li><a href="/archive">Archive</a></li>
+                                {/block:IfShowArchiveNavigationLink}
+                            </ul>
+                        </div>
+                    {/block:IfShowHeaderNavigation}
 
                     <div class="blog-title">
-                        <h1><a href="/">{Title}</a></h1>
+                        {block:IfLogoImage}
+                            <a href="/"><img src="{image:Logo}" alt="{Title}"/></a>
+                        {/block:IfLogoImage}
+                    
+                        {block:IfNotLogoImage}
+                            <h1><a href="/">{Title}</a></h1>
+                        {/block:IfNotLogoImage}
 
                         {block:IfShowDescription}
                             <p class="blog-description">{Description}</p>
@@ -2032,7 +2107,7 @@ span.odd, span.even  {
                                 {/block:Photo}
 
                                 {block:Photoset}
-                                    <div class="photoset-images photoset-{PhotosetLayout}" data-photoset-layout="{PhotosetLayout}">
+                                    <div class="photoset-images photoset-{PhotosetLayout}{block:ifPhotosetHoverCycle} hover-cycle{/block:ifPhotosetHoverCycle}" data-photoset-layout="{PhotosetLayout}">
                                         {block:Photos}
                                             <div class="photoset-image-wrapper">
                                                 <div class="image photoset-image">
@@ -2179,7 +2254,9 @@ span.odd, span.even  {
                 </div>
             {/block:IndexPage}
 
-            <div id="footer">
+            <div id="footer" class="
+                {block:IfCenteredFooter}centered-footer{/block:IfCenteredFooter}
+            ">
                 <div class="footer-content page-width">
 
                     {block:Pagination}
